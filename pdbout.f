@@ -3,8 +3,8 @@
       character*1 na,nt
       character*2 qual
       character*4 snam,sunit
-      character*128 file,ftop,lis,lib,lig,ibld,sol,back
-      common/cha/file,ftop,lis,lib,lig,ibld,sol,back
+      character*128 file,ftop,lis,lib,ibld,sol,back
+      common/cha/file,ftop,lis,lib,ibld,sol,back
       common/lam/cors(n1,3),snam(n1),sunit(n1),nunis(n1),
      1 mats(3*n1),kas,khs,kces
       common/mat/ni(n3,4),nu(n3,4),idr(4),nst,nlev,na(n3,4),nt(n3,4)

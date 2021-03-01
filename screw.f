@@ -5,8 +5,8 @@
       logical*2 circ,line,zaxe,fit,test,ions,refo,axfrm,frames
       dimension rsc(3),r1(4,3),r2(4,3),t(3,3),q(3,3),w(3),v(3),
      & scw(3),a(3,3)
-      common/dat/wback,wbase,isym,itst,itnd,itdel,naxlim,
-     1 circ,line,zaxe,fit,test,ions,refo,axfrm,frames
+      common/dat/wback,wbase,rvfac,isym,itst,itnd,itdel,itbkt,
+     1 naxlim,circ,line,zaxe,fit,test,ions,refo,axfrm,frames
       common/mat/ni(n3,4),nu(n3,4),idr(4),nst,nlev,na(n3,4),nt(n3,4)
       common/scr/uint(n3*100,4,3),urot(4,3),usc(6),var(6),theta,dist
 cjm---------------------------------------------------------------------

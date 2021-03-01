@@ -1,7 +1,7 @@
       program aacur
 c***********************************************************************
 c                                                                      *
-c     -------------------- Curves+ (2.6)  --------------------         *
+c     -------------------- Curves+ (3.0nc)  --------------------       *
 c                                                                      *
 c     Helical analysis of irregular nucleic acids                      *
 c                                                                      *
@@ -18,8 +18,9 @@ c     Improved groove geometry measurements                            *
 c                                                                      *
 c     Authors:  R.Lavery, K. Zakrzewska                                *
 c     (Screw axes: J. Maddocks, M. Moakher, D. Petkeviciute)           *
-c     (Helicaoidal volumes for ion densities: J.H. Maddocks)           *
+c     (Helicoidal volumes for ion densities: J.H. Maddocks)            *
 c     (Bisection algorithm for ion posn: M. Pasi, J.H. Maddocks)       *
+c     (NetCDF, XTC input: M. Pasi)                                     *
 c                                                                      *
 c                                                                      *
 c     Ver 1.1 Change allow for unit numbers >999                 10/09 *
@@ -31,8 +32,6 @@ c             at imput. Automatically choose first copy of any         *
 c             atoms which occur as multiple copies within a given      *
 c             residue. Recognize bases with lower case names.          *
 c             Allow backbones splines based on atoms other than P      *
-c     Ver 1.32 Minor update to base normal calculation when fit=.t.    *
-c             (for JHM) - no impact on helical parameters              *
 c     Ver 2.0 Added analysis of ligand positions +               10/11 *
 c             Tot rise/twist + Optional frame O/P + New cda format     *
 c     Ver 2.1 Added analysis of ion positions                    12/11 *
@@ -41,34 +40,43 @@ c     Ver 2.3 Corrected problem with circ=.t. for ions           03/12 *
 c     Ver 2.4 Added ion identity for rmsf                        04/12 *
 c     Ver 2.5 Optional solvent I/P and topology from pdb file    10/13 *
 c     Ver 2.6 New ion location algorithm (speed and accuracy)    03/14 *
+c     Ver 2.7 Analyze multiple segments of an MD trajectory      05/15 *
+c     Ver 2.8nc Amber NetCDF, Gromacs XTC trajectory input       11/15 *
+c     Ver 2.9nc Analyze curvature (radius and register)          04/16 *
+c     Ver 3.0nc Simplified namelist and PDB input                10/16 *
 c***********************************************************************
       include 'curves_data.inc'
+#ifdef NETCDF
+      include 'netcdf.inc'
+#endif
+#ifdef XTC
+      integer*4 xtc_handle, xtc_status, xtc_natom
+      real*4 xtc_cort, xtc_box
+      dimension xtc_cort(3,n1),xtc_box(3)
+#endif
       character*1 base,type,na,nt,nke
-      character*4 ban,bln,liga,mnam,munit,snam,sunit,nat,nback,
+      character*4 ban,mnam,munit,snam,sunit,nat,nback,
      & inam,name
-      character*20 ilnam
+      character*20 ilnam,string*9
       character*80 lini,cline
-      character*128 file,ftop,lis,lib,lig,ibld,sol,back
+      character*128 file,ftop,lis,lib,ibld,sol,back
       character ibnam*8,nbo*6,dir(-1:1)*5,ext*3,eto*3
       logical*2 circ,line,zaxe,fit,test,ions,refo,axfrm,frames,
      1 lpa,start,traj,box,there,skip
       integer*4 inx(n1p),intdat(1000),ihold(4),nhold(4)
-      dimension cort(2000,3)
+      dimension cort(2000,3),ibrack(200,2)
       common/bas/ibnam(20),bref(20,15,3),th1,th2,dis,ibref(20),
      1 ban(20,15),nbas,base(20),type(20)
       common/bisect/bsx(3)
-      common/cha/file,ftop,lis,lib,lig,ibld,sol,back
-      common/dat/wback,wbase,isym,itst,itnd,itdel,naxlim,
-     1 circ,line,zaxe,fit,test,ions,refo,axfrm,frames
-      common/geo/ref(n3,4,5,3),rel(n6,4,3),upm(n3,4,3),plig(n6),
-     1 ilig(n6),klig,nback(4)
+      common/cha/file,ftop,lis,lib,ibld,sol,back
+      common/dat/wback,wbase,rvfac,isym,itst,itnd,itdel,itbkt,
+     1 naxlim,circ,line,zaxe,fit,test,ions,refo,axfrm,frames
+      common/geo/ref(n3,4,5,3),upm(n3,4,3),nback(4)
       common/hel/upl(n3,0:8,6),uvw(n3,4,3),npl(n3),lpa(n3,4)
       common/ion/pari(n1,3),ilis(n1,2),klis(40),ilib(40),kion(5),
      1 kisa,nion,nspl,inam(40)
       common/lam/cors(n1,3),snam(n1),sunit(n1),nunis(n1),
      1 mats(3*n1),kas,khs,kces
-      common/lgd/ilnam(20),paxe(20),blef(20,40,3),parl(20,9),
-     1 ilref(20),iluni(20,2),ilfrm(20,-3:20),bln(20,40),nlig,liga(20)
       common/mac/corm(n1,3),mnam(n1),munit(n1),nunit(n1),
      1 iunit(n1),ncen(0:n2),kam,kcen
       common/mat/ni(n3,4),nu(n3,4),idr(4),nst,nlev,na(n3,4),nt(n3,4)
@@ -82,18 +90,19 @@ c----------------------------------------------------------namelist data
       ftop=' '
       lis=' '
       lib=' '
-      lig=' '
       ibld=' '
       back='P'
       sol=' '
  
       wback=2.9
       wbase=3.5
+      rvfac=7.5
  
       isym=1
       itst=0
       itnd=0
       itdel=1
+      itbkt=0
       naxlim=0
  
       circ=.false.
@@ -107,8 +116,18 @@ c----------------------------------------------------------namelist data
       axfrm=.false.
  
       nspl=3
+      itcount=0
+#ifdef XTC
+      xtc_handle = -1
+      xtc_status = -1
+#endif
 c---------------------------------------------------------input run data
       call nml
+         if(itbkt.gt.0) then
+         do i=1,itbkt
+         read(5,*) ibrack(i,1),ibrack(i,2)
+         enddo
+         endif
       if(zaxe.and.line) then
       write(6,600) '  ---- Choose between ZAXE and LINE ----'
 600   format(/,2x,a,/)
@@ -126,7 +145,6 @@ c---------------------------------------------------------input run data
       open(unit=3,file=lis(:kfi)//'.cda',status='new')
       if(ions) open(unit=7,file=lis(:kfi)//'.cdi',status='new')
       if(frames) open(unit=8,file=lis(:kfi)//'.fra',status='new')
-      if(lig.ne.' ') open(unit=9,file=lis(:kfi)//'.cdl',status='new')
          ib=index(back,' ')-1
          if(ib.gt.0) then
          if(index(back,'/').eq.0) then
@@ -309,15 +327,16 @@ c------------------------------------------------------------------input
       stop
       endif
       open(unit=1,file=file(:kfi),status='old')
-      ext=file(kfi-2:)
-         if(ext.eq.'trj'.or.ext.eq.'pgp') then
+      ext=file(index(file,'.',.true.)+1:)
+      if(ext.eq.'trj'.or.ext.eq.'nc'.or.
+     1   ext.eq.'xtc'.or.ext.eq.'pgp') then
          if(itst.gt.0.and.itnd.eq.0) itnd=itst
          if(itnd.gt.0.and.itst.eq.0) itst=1
            if(itst.eq.0.and.itnd.eq.0) then
            itst=1
            itnd=10000000
            endif
-             if(itnd.gt.itst) then
+             if(itst.ne.itnd) then
              traj=.true.
              test=.false.
              if(axfrm) write(6,*)
@@ -326,7 +345,7 @@ c------------------------------------------------------------------input
              endif
          endif
 c----------------------------------------------------------read topology
-         if(ext.eq.'trj') then
+         if(ext.eq.'trj'.or.ext.eq.'nc'.or.ext.eq.'xtc') then
          kft=index(ftop,' ')-1
          inquire(file=ftop(:kft),exist=there)
          if(.not.there) then
@@ -337,6 +356,8 @@ c----------------------------------------------------------read topology
          eto=ftop(kft-2:)
          call intop(eto,kto,inx)
          close(2)
+         endif
+         if(ext.eq.'trj') then
          nat3=3*kto
          nlin=nat3/10
          if(nlin*10.lt.nat3) nlin=nlin+1
@@ -354,16 +375,58 @@ c----------------------------------------------------------read topology
          if(box) write(6,5) '  ... TRJ includes box dimensions'
          open(unit=1,file=file(:kfi),status='old')
          read(1,*)
-         endif
+#ifdef NETCDF
+         elseif(ext.eq.'nc') then
+         ncstatus = nf_open(file(:kfi), nf_nowrite, ncid)
+         if(ncstatus.ne.nf_noerr) call ncerror(ncstatus, 1)
+c--- check consistency: kto and itnd
+         ncstatus = nf_inq_dimid(ncid, 'atom', nccid)
+         if(ncstatus.ne.nf_noerr) call ncerror(ncstatus, 1)
+         ncstatus = nf_inq_dimlen(ncid, nccid, nckto)
+         if(ncstatus.ne.nf_noerr) call ncerror(ncstatus, 1)
+            if(kto.gt.nckto) then ! accept partial topology
+            write(6,600) '  ---- Top / NetCDF molecule mismatch ----'
+            stop
+            endif
+         ncstatus = nf_inq_dimid(ncid, 'frame', nccid)
+         if(ncstatus.ne.nf_noerr) call ncerror(ncstatus, 1)
+         ncstatus = nf_inq_dimlen(ncid, nccid, ncitnd)
+         if(ncstatus.ne.nf_noerr) call ncerror(ncstatus, 1)
+            if(itnd.gt.ncitnd) then ! consistent with trj behaviour
+            itnd = ncitnd
+            endif
+c--- get coordinates
+         ncstatus = nf_inq_varid(ncid, 'coordinates', nccid)
+         if(ncstatus.ne.nf_noerr) call ncerror(ncstatus, 1)
+#endif
+#ifdef XTC
+         elseif(ext.eq.'xtc') then
+         call f77_molfile_init
+         call f77_molfile_open_read(
+     1     xtc_handle, xtc_natom, file(:kfi), 'auto')
+         if (xtc_handle.lt.0) call xtcerror(
+     1    'Cannot open trajectory file. Fatal.     ', 1)
+c--- check consistency: kto
+         if(kto.ne.xtc_natom) then ! only accept exact match
+            write(6,600) '  ---- Top / XTC molecule mismatch ----'
+            stop
+            endif
+#endif
+        endif
 c-----------------------------------------------------if traj begin loop
       itread=0
-      do itj=itst,itnd,itdel
-      if(ext.eq.'trj') then
-      nsk=(itdel-1)*nlin
-      if(itj.eq.itst) nsk=(itst-1)*nlin
+
+      itact=1
+      itj=itst
+400   if(ext.eq.'trj') then
+         if(itj.gt.itact) then
+         print *,' SKIPPING ',itj-itact,' itj= ',itj,' itact= ',itact
+         nsk=(itj-itact)*nlin
          do i=1,nsk
          read(1,*)
          enddo
+         itact=itj
+         endif
       ilow=1
       ihig=min(2000,kto)
 14    read(1,15,end=70) (cort(i,1),cort(i,2),cort(i,3),i=1,ihig-ilow+1)
@@ -382,15 +445,72 @@ c-----------------------------------------------------if traj begin loop
 
       if(box) read(1,*)
       itread=itread+1
+      elseif(ext.eq.'nc') then
+#ifdef NETCDF
+      ilow=1
+      ihig=min(2000,kto)
+17    ncstatus = nf_get_varm_double(ncid, nccid, 
+     1        (/ 1, ilow, itj /),
+     1        (/ 3, ihig-ilow+1, 1 /),
+     1        (/ 1,  1,  1 /),
+     1        (/ 2000, 1, 6000 /), cort)
+      if(ncstatus.ne.nf_noerr) call ncerror(ncstatus, 1)
+      do i=ilow,ihig
+      j=inx(i)
+         if(j.gt.0) then
+         do k=1,3
+         corm(j,k)=cort(i-ilow+1,k)
+         enddo
+         endif
+      enddo     
+      ilow=ilow+2000
+      ihig=min(ihig+2000,kto)
+      if(ilow.le.kto) goto 17
+      itread=itread+1
+#else
+      write(6,600) 'To read Amber netCDF files, please compile Curves+ w&
+     &ith netCDF support (see manual).'
+      stop
+#endif
+      elseif(ext.eq.'xtc') then
+#ifdef XTC
+      nsk=itj-itact
+         do i=1,nsk
+         xtc_status=0
+         call f77_molfile_read_next( ! skip read
+     1     xtc_handle, xtc_natom, corm, xtc_box, xtc_status)
+         if (xtc_status.eq.0) call xtcerror(
+     1    'Cannot skip next snapshot. Fatal.       ', 1)
+         enddo
+         itact=itj
+      xtc_status=1
+ 18   call f77_molfile_read_next( ! real read
+     1 xtc_handle, xtc_natom, xtc_cort, xtc_box, xtc_status)
+      if (xtc_status.eq.0) call xtcerror(
+     1    'Fatal error reading from XTC file.      ', 1)
+      if (xtc_status.eq.2) goto 112 ! EOF
+      do i=1,xtc_natom
+      j=inx(i)
+         if(j.gt.0) then
+         do k=1,3
+         corm(j,k)=xtc_cort(k,i)
+         enddo
+         endif
+      enddo     
+      itread=itread+1
+#else
+      write(6,600) 'To read Gromacs XTC files, please compile Curves+ wi&
+     &th XTC support (see manual).'
+      stop
+#endif
          else
-         call input(ext,kto)
+         call input(ext)
          if(kam.eq.0) goto 112
          itread=itread+1
          endif
-      call locate(itj,skip)
+      call locate(itj,itcount,skip)
       if(skip) goto 111
-      if(lig.ne.' ') call ligloc(itj)
-      if(itj.gt.itst) goto 16
+      if(itj.gt.itst.or.itcount.gt.0) goto 16
 c--------------------------------------------------------------find ions
       if(ions) then
       ki=0
@@ -403,7 +523,7 @@ c--------------------------------------------------------------find ions
       do i=1,kam
       name=mnam(i)
          do j=1,nion
-         if(name.eq.inam(j)) then
+         if(name.eq.inam(j).or.inam(j).eq.'*') then
          ki=ki+1
          ichg=ilib(j)
          ilis(ki,1)=i
@@ -424,9 +544,8 @@ c--------------------------------------------------------------find ions
       kion(1)=ki
       endif
 c------------------------------------------------------input and summary
-      write(6,20) nst,kam,kcen,kto-kam
-20    format(/2x,'Strands = ',i4,' Atoms = ',i5,' Units = ',i5
-     1 ' H removed = ',i5)
+      write(6,20) nst,kam,kcen
+20    format(/2x,'Strands = ',i4,' Atoms = ',i5,' Units = ',i5)
       write(6,30) nlev
 30    format(/2x,'Combined strands have ',i4,' levels ...'/)
       do k=1,nst
@@ -480,7 +599,7 @@ c         endif
       call params(totbend)
 c==========================================================O/P flat file
          k=0
-         jtot=19+nst*(ntor-1)+(nst-1)*4
+         jtot=21+nst*(ntor-1)+(nst-1)*4
          do i=1,nlev
          do j=1,jtot
          k=k+1
@@ -527,31 +646,30 @@ c-------------------------------------------------------------------ions
          enddo
          if(k.gt.0) write(7,73) (intdat(i),i=1,k)
          endif
-c----------------------------------------------------------------ligands
-         if(klig.gt.0) then
-            if(itj.eq.itst) then
-            write(9,73) nlev,nst,klig
-            write(9,74) (na(i,1),i=1,nlev)
-            endif
-         k=0
-         do i=1,klig
-         do j=1,9
-         k=k+1
-         intdat(k)=nint(parl(i,j)*1000)
-            if(k.eq.200) then
-            write(9,73) (intdat(m),m=1,200)
-            k=0
-            endif
-         enddo
-         enddo
-         if(k.gt.0) write(9,73) (intdat(i),i=1,k)
-         endif
 c-----------------------------------------------------------------------
-111   enddo !......end trajectory loop
+111   itact=itact+1
+      itj=itj+itdel
+      if(itj.le.itnd) goto 400
+         if(itcount.lt.itbkt) then
+         itcount=itcount+1         
+         itst=ibrack(itcount,1)
+         itnd=ibrack(itcount,2)
+         write(6,116) itcount,itst,itnd
+116      format(/2x,'Bracket ',i3,' ITST= ',i7,' ITND= ',i7)
+         itj=itst
+         goto 400
+         endif
 112   close(3)
       if(ions) close(7)
       if(frames) close(8)
 70    if(itread.gt.1) write(6,79) ext,itread
+#ifdef NETCDF
+      ncstatus = nf_close(ncid)
+#endif
+#ifdef XTC
+      if(xtc_handle.ge.0) call f77_molfile_close_read(
+     1 xtc_handle, xtc_status)
+#endif
 79    format(/2x,'... ',a3,' loop read ',i8,' snapshots'/)
 c------------------------------------------------------------axis frames
       if(axfrm) then
@@ -560,6 +678,15 @@ c------------------------------------------------------------axis frames
       write(8,'(i4)') nlev
       write(8,114) (((uvw(i,j,k),k=1,3),j=1,4),i=1,nlev)
 114   format(12f12.7)
+         if(.not.circ) then
+         do j=20,21
+         bpdat(1,j)=0.
+         bpdat(nlev-2,j)=0.
+         bpdat(nlev-1,j)=0.
+         enddo
+         endif
+         write(8,115) (bpdat(i,20),bpdat(i,21),i=1,nlev)
+115      format(2f12.5)
       close(8)
       endif
 c--------------------------------------------------------------ion build

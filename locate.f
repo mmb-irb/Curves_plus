@@ -1,17 +1,16 @@
-      subroutine locate(itj,skip)
+      subroutine locate(itj,itcount,skip)
       include 'curves_data.inc'
       character*1 na,nt,base,type,first
       character*4 mnam,munit,name,ban,nback
       character*8 ibnam
       logical*2 circ,line,zaxe,fit,test,ions,refo,axfrm,frames,
-     1 nind,traj,skip
+     1 nind,traj,skip,setout
       dimension dcor(40,3),ds(9),ss(3),a(3,3),nind(40)
       common/bas/ibnam(20),bref(20,15,3),th1,th2,dis,ibref(20),
      1 ban(20,15),nbas,base(20),type(20)
-      common/dat/wback,wbase,isym,itst,itnd,itdel,naxlim,
-     1 circ,line,zaxe,fit,test,ions,refo,axfrm,frames
-      common/geo/ref(n3,4,5,3),rel(n6,4,3),upm(n3,4,3),plig(n6),
-     1 ilig(n6),klig,nback(4)
+      common/dat/wback,wbase,rvfac,isym,itst,itnd,itdel,itbkt,
+     1 naxlim,circ,line,zaxe,fit,test,ions,refo,axfrm,frames
+      common/geo/ref(n3,4,5,3),upm(n3,4,3),nback(4)
       common/mac/corm(n1,3),mnam(n1),munit(n1),nunit(n1),
      1 iunit(n1),ncen(0:n2),kam,kcen
       common/mat/ni(n3,4),nu(n3,4),idr(4),nst,nlev,na(n3,4),nt(n3,4)
@@ -21,6 +20,7 @@ crl   Find necessary atoms (base and backbone), optiionally LS fit standard base
 crl   Generate base ref. system ref(level,strand,vec,xyz)
 crl   vec1 - dyad (into major), vec2 - perp. dyad to 5'-3', vec3 - normal, vec4
       skip=.false. 
+      setout=.false.
       refmax=0.
       refmin=0.
       rmsx=0.d0
@@ -47,11 +47,12 @@ crl   ncen defines limits of subunits iu (nucleotides)
       do lb=1,nbas
       if(first.eq.base(lb)) goto 10
       enddo
-      if(itj.eq.itst) write(6,8) m,n,munit(is)
+      if(itj.eq.itst.and.itcount.eq.0) write(6,8) m,n,munit(is)
 8     format(/2x,'Base not recognized at level ',i3,' strand ',i1,
      1 ': ',a4)
       na(m,n)='-'
       nu(m,n)=0
+      setout=.true.
       goto 20
 10    kb=0
       nt(m,n)=type(lb)
@@ -73,12 +74,12 @@ crl   ncen defines limits of subunits iu (nucleotides)
       do mm=1,ibref(lb)
       if(.not.nind(mm)) then
       if(mm.le.4) then
-      write(6,12) ban(lb,m),n,m,'(Necessary for analysis)'
+      write(6,12) ban(lb,m),n,m,' (Necessary for analysis)'
 12    format(/2x,' Base atom ',a4,' missing in strand ',
      1 i3,' level ',i3,a)
       stop
          else
-         if(itj.eq.itst) write(6,12) ban(lb,m),n,m,
+         if(itj.eq.itst.and.itcount.eq.0) write(6,12) ban(lb,m),n,m,
      1   '(not essential for analysis)'
          endif
       endif
@@ -109,44 +110,13 @@ c------------------------------------------B-S bond and normal direction
          bx=dcor(3,1)-x0
          by=dcor(3,2)-y0
          bz=dcor(3,3)-z0
-         cx=ay*bz-az*by
-         cy=az*bx-ax*bz
-         cz=ax*by-ay*bx
-c-----------------------------------------------------------------normal
-         do j=1,9
-         if(j.le.3) ss(j)=0.d0
-         ds(j)=0.d0
-         enddo
-      do i=1,ibref(lb)
-      if(nind(i)) then
-      do j=1,3
-      ss(j)=ss(j)+dcor(i,j)
-      enddo
-      endif
-      enddo
-         do j=1,3
-         ss(j)=ss(j)/kb
-         enddo
-      j=0
-      do mm=1,3
-      do l=1,mm
-      j=j+1
-         do i=1,ibref(lb)
-         if(nind(i)) ds(j)=ds(j)+(dcor(i,mm)-ss(mm))*(dcor(i,l)-ss(l))
-         enddo
-      enddo
-      enddo
-      call eigen(ds,a,3)
-      ra=sqrt(a(1,3)**2+a(2,3)**2+a(3,3)**2)
-      rx=a(1,3)/ra
-      ry=a(2,3)/ra
-      rz=a(3,3)/ra
-         dot=rx*cx+ry*cy+rz*cz
-         if(dot.lt.0.) then
-         rx=-rx
-         ry=-ry
-         rz=-rz
-         endif
+         rx=ay*bz-az*by
+         ry=az*bx-ax*bz
+         rz=ax*by-ay*bx
+         rr=sqrt(rx*rx+ry*ry+rz*rz)
+         rx=rx/rr
+         ry=ry/rr
+         rz=rz/rr
       ref(m,n,3,1)=rx
       ref(m,n,3,2)=ry
       ref(m,n,3,3)=rz
@@ -185,6 +155,18 @@ c---------------------------------------------------------construct dyad
       ref(m,n,1,1)=dy*rz-dz*ry
       ref(m,n,1,2)=dz*rx-dx*rz
       ref(m,n,1,3)=dx*ry-dy*rx
+c---------------------------------------------------orthonormality check
+c      r1=sqrt(ref(m,n,1,1)**2+ref(m,n,1,2)**2+ref(m,n,1,3)**2)
+c      r2=sqrt(ref(m,n,2,1)**2+ref(m,n,2,2)**2+ref(m,n,2,3)**2)
+c      r3=sqrt(ref(m,n,3,1)**2+ref(m,n,3,2)**2+ref(m,n,3,3)**2)
+c      d1=ref(m,n,1,1)*ref(m,n,2,1)+ref(m,n,1,2)*ref(m,n,2,2)
+c     &   +ref(m,n,1,3)*ref(m,n,2,3)
+c      d2=ref(m,n,3,1)*ref(m,n,2,1)+ref(m,n,3,2)*ref(m,n,2,2)
+c     &   +ref(m,n,3,3)*ref(m,n,2,3)
+c      d3=ref(m,n,1,1)*ref(m,n,3,1)+ref(m,n,1,2)*ref(m,n,3,2)
+c     &   +ref(m,n,1,3)*ref(m,n,3,3)
+c      write(6,72) m,n,r1,r2,r3,d1,d2,d3
+c72    format('ON Check ',2i2,6f9.6)
 c--------------------------------------------------atom for groove depth
       ref(m,n,5,1)=dcor(4,1)
       ref(m,n,5,2)=dcor(4,2)
@@ -203,6 +185,7 @@ c--------------------------------------------------atom for groove depth
 20    continue
       enddo
       enddo
+      if(setout) stop
 c---------------------------------------------------------------------LS
       if(fit.and..not.test.and..not.traj) write(6,70) rmsx
 70    format(/2x,'LS fitting of standard bases ...RMS max = ',f6.3)

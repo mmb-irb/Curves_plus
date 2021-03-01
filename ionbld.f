@@ -9,10 +9,9 @@
       dimension r1(4,3),r2(4,3),t(3,3)
       common/bas/ibnam(20),bref(20,15,3),th1,th2,dis,ibref(20),
      1 ban(20,15),nbas,base(20),type(20)
-      common/dat/wback,wbase,isym,itst,itnd,itdel,naxlim,
-     1 circ,line,zaxe,fit,test,ions,refo,axfrm,frames
-      common/geo/ref(n3,4,5,3),rel(n6,4,3),upm(n3,4,3),plig(n6),
-     1 ilig(n6),klig,nback(4)
+      common/dat/wback,wbase,rvfac,isym,itst,itnd,itdel,itbkt,
+     1 naxlim,circ,line,zaxe,fit,test,ions,refo,axfrm,frames
+      common/geo/ref(n3,4,5,3),upm(n3,4,3),nback(4)
       common/hel/upl(n3,0:8,6),uvw(n3,4,3),npl(n3),lpa(n3,4)
       common/ion/pari(n1,3),ilis(n1,2),klis(40),ilib(40),kion(5),
      1 kisa,nion,nspl,inam(40)

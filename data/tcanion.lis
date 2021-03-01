@@ -1,0 +1,40 @@
+
+     ***************************************
+     ****  CANION  Version 3.5 10/2016  ****
+     ***************************************
+
+
+  LIS  : tcanion                           DAT  : test.cdi                        
+  AXFRM: test                              solut:                                 
+  prop :                                   TYPE : *                               
+  seq  : *                                 seqin:                                 
+
+  sris  :     3.38  stwi  :    34.50  grid  :     1.00  alow  :     0.00
+  ahig  :   360.00  dlow  :     1.00  dhig  :   500.00  rlow  :     0.00
+  rhig  :    30.00  clim  :     0.40  pmin  :  -500.00  pmax  :   500.00
+
+  ITST  :        1  itnd  :        0  itdel :        1  istep :        0  iwin  :        0
+
+  rmsf  :        F  circ  :        F  series:        F  dbrac :        F  ins   :        T
+  outs  :        T  acvol :        F
+
+
+  Preselect = C      G      C      G      A      A      T      T      C      G      
+              |^^^^^^|^^^^^^|^^^^^^|^^^^^^|^^^^^^|^^^^^^|^^^^^^|^^^^^^|^^^^^^|^^^^^^
+
+              C      G
+              |^^^^^^|
+
+  nlev=  12 nst=   2 nion=  11
+  Seq: CGCGAATTCGCG
+
+  Hdim=      66     60     72
+  Cdim=      80     89     99
+  Csiz=    80.6   89.7   99.9
+
+  Inaccessible histogram elements =          0
+
+   Vsolv= 104329.4 Vsolu=      0.0
+   Snaps=        1 <Ions>=   44.00 <Molarity>=    0.70 max_M=  13495.3 min_M=   6458.6
+
+  Time for run:     0.1 sec

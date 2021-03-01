@@ -1,14 +1,19 @@
-      subroutine input(ext,kto)
+      subroutine input(ext)
       include 'curves_data.inc'
+      logical*2 save,prot
       character*1 base,type,aloc,acha
       character*3 ext,auni,p3(20),m3(20),atran(20,2)
-      character*4 mnam,munit,name,anam,ban
+      character*4 mnam,munit,snam,sunit,name,anam,ban,inam
       character*8 ibnam
       character*80 lini,mcode
-      character*128 file,ftop,lis,lib,lig,ibld,sol,back
+      character*128 file,ftop,lis,lib,ibld,sol,back
       common/bas/ibnam(20),bref(20,15,3),th1,th2,dis,ibref(20),
      1 ban(20,15),nbas,base(20),type(20)
-      common/cha/file,ftop,lis,lib,lig,ibld,sol,back
+      common/cha/file,ftop,lis,lib,ibld,sol,back
+      common/ion/pari(n1,3),ilis(n1,2),klis(40),ilib(40),kion(5),
+     1 kisa,nion,nspl,inam(40)
+      common/lam/cors(n1,3),snam(n1),sunit(n1),nunis(n1),
+     1 mats(3*n1),kas,khs,kces
       common/mac/corm(n1,3),mnam(n1),munit(n1),nunit(n1),
      1 iunit(n1),ncen(0:n2),kam,kcen
       data p3/
@@ -40,9 +45,11 @@ c--------------------------------------------------------read mac format
 c--------------------------------------------------------read pdb format
       else if(ext.eq.'pdb'.or.ext.eq.'PDB'.or.ext.eq.'pgp') then
       i=0
-      kto=0
+      isp=0
       ktr=0
-100   read(1,5,end=110) lini
+100   save=.false.
+      prot=.false.
+      read(1,5,end=110) lini
       if(index(lini,'ENDMDL').ne.0) goto 110
       if(lini(:6).eq.'TRANSL') then
       ktr=ktr+1
@@ -52,20 +59,41 @@ c--------------------------------------------------------read pdb format
       atran(ktr,2)=lini(inx+1:iny-1)
       goto 100
       endif
+c--------------------------L.Just names and filter out unnecessary atoms
       if(lini(:4).ne.'ATOM'.and.lini(:6).ne.'HETATM') goto 100
       read(lini,106) anam,aloc,auni,acha,nuni,x,y,z
 106   format(12x,a4,a1,a3,1x,a1,i4,4x,3f8.3)
-         if(index(anam,'H').ne.0) then
-         kto=kto+1
+105   if(anam(:1).eq.' ') then
+      anam=anam(2:)
+      goto 105
+      endif
+107   if(auni(:1).eq.' ') then
+      auni=auni(2:)
+      goto 107
+      endif
+      do k=1,20
+      if(auni.eq.p3(k).or.auni.eq.m3(k)) prot=.true.
+      enddo
+         do k=1,nion
+         if(anam.eq.inam(k).and.
+     1   (prot.or.lini(:6).eq.'HETATM')) save=.true.
+         enddo
+         if(lini(:6).eq.'HETATM'.and.auni.eq.sol(:3)) save=.true.
+         if(save) then
+         isp=isp+1
+         snam(isp)=anam
+         sunit(isp)=auni//acha
+         nunis(isp)=nuni
+         cors(isp,1)=x
+         cors(isp,2)=y
+         cors(isp,3)=z
          goto 100
          endif
-      if(lini(:6).eq.'HETATM'.and.auni.ne.sol(:3)) goto 100
+      if(index(anam,'H').ne.0) goto 100
+      if(prot) goto 100
+c-----------------------------------------------------------------------
       i=i+1
-      mnam(i)=  anam
-107      if(auni(:1).eq.' ') then
-         auni=auni(2:)
-         goto 107
-         endif
+      mnam(i)=anam
          if(auni(:1).eq.'D') then
          do m=1,nbas
          if(auni(2:2).eq.base(m)) then
@@ -82,20 +110,23 @@ c--------------------------------------------------------read pdb format
          i=i-1
          goto 100
          endif
-         do k=1,20
-         if(auni.eq.p3(k).or.auni.eq.m3(k)) then
-         i=i-1
-         goto 100
-         endif
-         enddo
-      munit(i)= auni//acha
-      nunit(i)= nuni
+      munit(i)=auni//acha
+      nunit(i)=nuni
       corm(i,1)=x
       corm(i,2)=y
       corm(i,3)=z
       goto 100
-110   kam=i
-      kto=kto+kam
+c-----------------------------------------add supplementary atoms at end
+110   do k=1,isp
+      i=i+1
+      mnam(i)=snam(k)
+      munit(i)=sunit(k)
+      nunit(i)=nunis(k)
+      corm(i,1)=cors(k,1)
+      corm(i,2)=cors(k,2)
+      corm(i,3)=cors(k,3)
+      enddo
+      kam=i
       if(kam.eq.0) return
 c-------------------------------------------------------------------trap
       else
@@ -103,10 +134,9 @@ c-------------------------------------------------------------------trap
       stop
       endif
       if(ext.ne.'pgp') close(1)
-c---------------left justify atom and subunit names and replace ! with *
+c----------------------remove leading integers and replace quotes with *
       do i=1,kam
-10    if(mnam(i)(:1).eq.' '.or.(ichar(mnam(i)(:1)).ge.48
-     1 .and.ichar(mnam(i)(:1)).le.57)) then
+10    if((ichar(mnam(i)(:1)).ge.48.and.ichar(mnam(i)(:1)).le.57)) then
       mnam(i)=mnam(i)(2:)
       goto 10
       endif
@@ -114,10 +144,6 @@ c---------------left justify atom and subunit names and replace ! with *
       if(iq.ne.0) then
       mnam(i)(iq:iq)='*'
       goto 11
-      endif
-12    if(munit(i)(:1).eq.' ') then
-      munit(i)=munit(i)(2:)
-      goto 12
       endif
       enddo
 c----------------------------------------------------------find subunits

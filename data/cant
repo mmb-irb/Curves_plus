@@ -1,0 +1,6 @@
+rm tcanal*.*
+/Users/rl/Code/util/canal <<!
+&inp lis=tcanal, clim=0., iwin=1, seq=*, series=.f., &end
+test CGCGAATTCGCG
+!
+

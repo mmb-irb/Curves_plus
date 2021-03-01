@@ -1,21 +1,21 @@
       subroutine nml
       include 'curves_data.inc'
-      parameter (n_real=2,n_int=5,n_log=9,n_cha=8,n_tot=24)
+      parameter (n_real=3,n_int=6,n_log=9,n_cha=7,n_tot=25)
       character vp(n_cha)*32,input(n_tot)*10,date*25,day*9,lj*1
-      character*128 file,ftop,lis,lib,lig,ibld,sol,back,
-     1 lini,vc(n_cha)
+      character*128 file,ftop,lis,lib,ibld,sol,back,vc(n_cha)
+      character*200 lini
       logical*2 circ,line,zaxe,fit,test,ions,refo,axfrm,frames,
      1 vo(n_log),iflag(n_tot),first,last,start
       integer*4 vi(n_int),nmls(n_tot)
       dimension vr(n_real)
-      common/cha/file,ftop,lis,lib,lig,ibld,sol,back
-      common/dat/wback,wbase,isym,itst,itnd,itdel,naxlim,
-     1 circ,line,zaxe,fit,test,ions,refo,axfrm,frames
+      common/cha/file,ftop,lis,lib,ibld,sol,back
+      common/dat/wback,wbase,rvfac,isym,itst,itnd,itdel,itbkt,
+     1 naxlim,circ,line,zaxe,fit,test,ions,refo,axfrm,frames
       equivalence (vc(1),file),(vr(1),wback),(vi(1),isym),(vo(1),circ)
-      data input/'wback','wbase','isym','itst','itnd','itdel',
-     1 'naxlim','circ','line','zaxe','fit','test','ions','refo',
-     1 'axfrm','frames','file','ftop','lis','lib','lig','ibld',
-     1 'sol','back'/
+      data input/'wback','wbase','rvfac','isym','itst','itnd','itdel',
+     1 'itbkt','naxlim','circ','line','zaxe','fit','test','ions',
+     1 'refo','axfrm','frames','file','ftop','lis','lib',
+     1 'ibld','sol','back'/
       ninr=n_int+n_real
       nlog=n_log+ninr
          do i=1,n_cha-1
@@ -34,7 +34,7 @@
       if(.not.first) last=.true.
       if(first.and.index(lini(im+1:),'&').ne.0) last=.true.
       endif
-      do k=1,128
+      do k=1,200
       if(lini(k:k).eq.'=') then
       kl=k
       start=.true.
@@ -46,6 +46,9 @@
       else if(.not.start.and.(lj.eq.' '.or.lj.eq.',')) then
       jl=j+1
       goto 15
+      else if(j.eq.1) then
+      jl=j
+      goto 15
       endif
       enddo
       goto 50
@@ -54,7 +57,7 @@
          iflag(i)=.true.
  17         kl=kl+1
             if(lini(kl:kl).eq.' ') goto 17
-            do j=kl,128
+            do j=kl,200
             lj=lini(j:j)
             if(lj.eq.' '.or.lj.eq.','.or.lj.eq.'&') then
             kh=j-1
@@ -99,7 +102,7 @@ c-----------------------------------------------------------------output
       write(6,200) day
 200   format(
      1/5x,'**************************************',15x,'**************',
-     1/5x,'**** CURVES+ Version 2.6  04/2014 ****',15x,'*  ',a9,   ' *',
+     1/5x,'**** CURVES+ Version 3.0nc 09/2016 ***',15x,'*  ',a9,   ' *',
      1/5x,'**************************************',15x,'**************',
      1 //)
       do i=1,n_tot

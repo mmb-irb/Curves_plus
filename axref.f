@@ -2,14 +2,14 @@
       include 'curves_data.inc'
       character*1 na,nt
       character*4 snam,sunit,inam
-      character*128 file,ftop,lis,lib,lig,ibld,sol,back
-      logical*2 circ,line,zaxe,fit,test,ions,refo,lpa,traj,axfrm,
-     1 frames,wat
+      character*128 file,ftop,lis,lib,ibld,sol,back
+      logical*2 circ,line,zaxe,fit,test,ions,refo,traj,axfrm,
+     1 lpa,frames,wat
       dimension f(4,3),pl(3),pu(3),ul(3),uu(3),dya(3),
      1 so(3),sn(3),sto(3)
-      common/cha/file,ftop,lis,lib,lig,ibld,sol,back
-      common/dat/wback,wbase,isym,itst,itnd,itdel,naxlim,
-     1 circ,line,zaxe,fit,test,ions,refo,axfrm,frames,wat
+      common/cha/file,ftop,lis,lib,ibld,sol,back
+      common/dat/wback,wbase,rvfac,isym,itst,itnd,itdel,itbkt,
+     1 naxlim,circ,line,zaxe,fit,test,ions,refo,axfrm,frames
       common/hel/upl(n3,0:8,6),uvw(n3,4,3),npl(n3),lpa(n3,4)
       common/ion/pari(n1,3),ilis(n1,2),klis(40),ilib(40),kion(5),
      1 kisa,nion,nspl,inam(40)
@@ -41,7 +41,7 @@ c--------------------------------------------------------step screw axes
       enddo
       enddo
       kas=m
-      if(.not.traj.or.(itst.eq.itnd)) call pdbout('_s',2)
+      if(.not.traj) call pdbout('_s',2)
 c---------------------------------------------------------averaged axes
       r=2.0d0
       m=0
@@ -64,9 +64,7 @@ c---------------------------------------------------------averaged axes
       enddo
       kas=m
       khs=lm-1
-      if(.not.traj.or.(itst.eq.itnd)) call pdbout('_v',2)
+      if(.not.traj) call pdbout('_v',2)
       endif
-c--------------------------------------------------------------draw axis
-      call intaxe
       return
       end

@@ -1,19 +1,20 @@
-## Curves+
+## Curves+ v3.0
 
 ---
 
 [Official Homepage](https://bisi.ibcp.fr/tools/curves_plus/index.html)
+[BSC Curves+ Server Homepage](http://curvesplus.bsc.es/misc)
 
 _Authors: R. Lavery, M. Moakher, J. H. Maddocks, D. Petkeviciute, K. Zakrzewska_
 
-**Curves+** is a revised version of the Curves approaech for analysing the structure of nucleic acids. It respects the international conventions for nucleic acid analysis, runs much faster and provides new data.
+**Curves+**
+Conformational analysis of single nucleic acid structures or of molecular dynamics (MD) trajectories
 
+**Canal**
+Statistical analysis of nucleic conformational data from MD trajectories produced by Curves+
 
-As well as treating single nucleic acid structures, Curves+, with the help of **Canal**, can analyse molecular dynamics trajectories and generate time series, time averaged properties and search for correlations between variables.
-
-
-In conjunction with **Canion**, Curves+ can now be used to analyze the distribution of ions or molecules around nucleic acids in curvilinear helicoidal coordinates.
-
+**Canion**
+Analysis of ion/water/ligand distribution data from MD trajectories produced by Curves+
 ---
 
 Usage:
@@ -24,11 +25,8 @@ Usage:
     # compile only Curves+
     make Cur+ FC=gfortran
     
-    # compile only Cabal (Curves+ needs to be compiled first)
+    # compile only Canal (Curves+ needs to be compiled first). Same procedure for Canion
     make Canal FC=gfortran
 
     # clean 
     make clean
-
-    # test Cur+ execution on 1bna.pdb, should return no output if successful
-    bash test/test.sh

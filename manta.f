@@ -5,17 +5,16 @@
       character*4 mnam,munit,snam,sunit,nat,nback,ext(3)
       character*6 nbo,stg(n3,8)
       character*7 string
-      character*128 file,ftop,lis,lib,lig,ibld,sol,back
-      logical*2 circ,line,zaxe,fit,test,ions,refo,axfrm,frames,locp,
-     1 rhelx,lpa,traj
+      character*128 file,ftop,lis,lib,ibld,sol,back
+      logical*2 circ,line,zaxe,fit,test,ions,refo,axfrm,frames,
+     1 locp,rhelx,lpa,traj
       dimension bkc(n3*nbac,3,4),bpc(n3,3,4),bpt(n3,3,4),
      1 pl(3),pu(3),ul(3),uu(3),f(4,3),wid(n2*5,n2*5),
      1 wex(2),dex(2),iex(2),jex(2)
-      common/cha/file,ftop,lis,lib,lig,ibld,sol,back
-      common/dat/wback,wbase,isym,itst,itnd,itdel,naxlim,
-     1 circ,line,zaxe,fit,test,ions,refo,axfrm,frames
-      common/geo/ref(n3,4,5,3),rel(n6,4,3),upm(n3,4,3),plig(n6),
-     1 ilig(n6),klig,nback(4)
+      common/cha/file,ftop,lis,lib,ibld,sol,back
+      common/dat/wback,wbase,rvfac,isym,itst,itnd,itdel,itbkt,
+     1 naxlim,circ,line,zaxe,fit,test,ions,refo,axfrm,frames
+      common/geo/ref(n3,4,5,3),upm(n3,4,3),nback(4)
       common/hel/upl(n3,0:8,6),uvw(n3,4,3),npl(n3),lpa(n3,4)
       common/lam/cors(n1,3),snam(n1),sunit(n1),nunis(n1),
      1 mats(3*n1),kas,khs,kces
@@ -24,12 +23,12 @@
       common/mat/ni(n3,4),nu(n3,4),idr(4),nst,nlev,na(n3,4),nt(n3,4)
       common/sto/bpdat(n3,n5),traj
       common/str/nbo(40),nat(40,8),ish(40,8),ntor,nke(40)
-      data wmax/18.0/,ext/'.min','.dia','.maj'/,
+      data wmax/52.0/,ext/'.min','.dia','.maj'/,
      1 chain/'A','B','C','D','E','F','G','H'/
       sq2=sqrt(2.d0)
       kwid=100
       rhelx=.true.
-      joff=19+nst*(ntor-1)
+      joff=21+nst*(ntor-1)
 c-----------------------------------------------------------------------
       if(.not.traj) write(6,1)
 1     format(/2x,'(E) Groove parameters'/)
@@ -342,16 +341,17 @@ c------------------------------------------------------extra PDB output
          i=iex(m)
          j=jex(m)
          ns=ns+1
+         r=1.5+float(k-2)/(2*nbac)
          snam(ns)='B'
          sunit(ns)='GRV'//chain(mch)
-         nunis(ns)=mch
+         nunis(ns)=nint(r*10);
          do l=1,3
          cors(ns,l)=bkc(i,l,ksl)
          enddo
          ns=ns+1
          snam(ns)='B'
          sunit(ns)='GRV'//chain(mch)
-         nunis(ns)=mch
+         nunis(ns)=nint(r*10);
          do l=1,3
          cors(ns,l)=bkc(j,l,ksu)
          enddo

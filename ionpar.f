@@ -11,10 +11,9 @@
       common/bas/ibnam(20),bref(20,15,3),th1,th2,dis,ibref(20),
      1 ban(20,15),nbas,base(20),type(20)
       common/bisect/bsx(3)
-      common/dat/wback,wbase,isym,itst,itnd,itdel,naxlim,
-     1 circ,line,zaxe,fit,test,ions,refo,axfrm,frames
-      common/geo/ref(n3,4,5,3),rel(n6,4,3),upm(n3,4,3),plig(n6),
-     1 ilig(n6),klig,nback(4)
+      common/dat/wback,wbase,rvfac,isym,itst,itnd,itdel,itbkt,
+     1 naxlim,circ,line,zaxe,fit,test,ions,refo,axfrm,frames
+      common/geo/ref(n3,4,5,3),upm(n3,4,3),nback(4)
       common/hel/upl(n3,0:8,6),uvw(n3,4,3),npl(n3),lpa(n3,4)
       common/ion/pari(n1,3),ilis(n1,2),klis(40),ilib(40),kion(5),
      1 kisa,nion,nspl,inam(40)
@@ -48,11 +47,14 @@ c------------------------------------------------------------locate ions
       dot=dx*uvw(i,3,1)+dy*uvw(i,3,2)+dz*uvw(i,3,3)
       if(dot.lt.0) sneg(i)=.true.
       enddo
+      if(circ) sneg(nlev+1)=sneg(1)
 c--------------------------------------find perpendicular vector to axis
          iminim=0
          rglo=1.d4
          iglo=-1
-         do il=1,nlev-1
+         iup=nlev-1
+         if(circ) iup=nlev
+         do il=1,iup
          if(sneg(il).neqv.sneg(il+1)) then
          imin=-1
          ilow=1+(il-1)*nspl
@@ -62,19 +64,20 @@ c--------------------------------------find perpendicular vector to axis
          bsx(2)=y0
          bsx(3)=z0
          call bisection(ilow,ihig,imin)
+         if(imin.ge.0) then
          dx=bsx(1)-uint(imin,4,1)
          dy=bsx(2)-uint(imin,4,2)
          dz=bsx(3)-uint(imin,4,3)
          rmin=sqrt(dx*dx+dy*dy+dz*dz)
-            if(imin.ge.0.and.rmin.lt.rglo) then
+            if(rmin.lt.rglo) then
             rglo=rmin
             iglo=imin
             endif
+         endif  
          endif
          enddo
          if(rglo.gt.shell) goto 21
 c------------------------------------------------------------located ion
-c     if(imin.eq.1.or.imin.eq.npt) goto 21
       ks=ks+1
       jt=ilis(k,2)
       iunit(ks)=nunit(ilis(k,1))*100+ilis(k,2)
@@ -108,11 +111,11 @@ c     if(imin.eq.1.or.imin.eq.npt) goto 21
          mats(khs+2)=iglo
          mats(khs+3)=kas
          khs=khs+3
-      endif
 c--------------------------------------------------------calculate angle
-      if(.not.traj.or.(itst.eq.itnd)) write(6,23) ks,mnam(in),
-     & nunit(in),pari(ks,1),pari(ks,2),pari(ks,3)*crd
+      write(6,23) ks,mnam(in),nunit(in),pari(ks,1),pari(ks,2),
+     1 pari(ks,3)*crd
 23    format(i3,') ',a4,i3,2f8.2,f8.1)
+      endif
 21    enddo
       kisa=ks
       return

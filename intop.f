@@ -3,9 +3,9 @@
       character*3 eto
       character*4 name,mnam,munit,mnx,namer(n2)
       character*80 line
-      character*128 file,ftop,lis,lib,lig,ibld,sol,back
+      character*128 file,ftop,lis,lib,ibld,sol,back
       dimension inx(n1p),ncx(n1p),mnx(n1p),nd(10)
-      common/cha/file,ftop,lis,lib,lig,ibld,sol,back
+      common/cha/file,ftop,lis,lib,ibld,sol,back
       common/mac/corm(n1,3),mnam(n1),munit(n1),nunit(n1),
      1 iunit(n1),ncen(0:n2),kam,kcen
 c----------------------------------------------------------read pdb file

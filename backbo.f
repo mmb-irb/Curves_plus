@@ -12,8 +12,8 @@
       dimension is(3),ie(3),ita(5),store(5),tnam(40)
       common/bas/ibnam(20),bref(20,15,3),th1,th2,dis,ibref(20),
      1 ban(20,15),nbas,base(20),type(20)
-      common/dat/wback,wbase,isym,itst,itnd,itdel,naxlim,
-     1 circ,line,zaxe,fit,test,ions,refo,axfrm,frames
+      common/dat/wback,wbase,rvfac,isym,itst,itnd,itdel,itbkt,
+     1 naxlim,circ,line,zaxe,fit,test,ions,refo,axfrm,frames
       common/mac/corm(n1,3),mnam(n1),munit(n1),nunit(n1),
      1 iunit(n1),ncen(0:n2),kam,kcen
       common/mat/ni(n3,4),nu(n3,4),idr(4),nst,nlev,na(n3,4),nt(n3,4)
@@ -24,7 +24,7 @@
       if(.not.traj) write(6,41)
 41    format(/2x,'(D) Backbone Parameters')
       do k=1,nst
-      joff=(k-1)*(ntor-1)+19
+      joff=(k-1)*(ntor-1)+21
       ms=1
       me=min(mwid,ntor)
 5     start=.true.

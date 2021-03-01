@@ -2,16 +2,16 @@
       implicit integer*4 (i-n)
 
 c...Maximum number of atoms in complex
-      parameter (n1=20000)
+      parameter (n1=40000)
 
 c...Maximum number of atoms including hydrogens
-      parameter (n1p=30000)
+      parameter (n1p=20000)
 
 c...Maximum number of subunits
-      parameter (n2=1500)
+      parameter (n2=3000)
 
 c...Maximum number of nucleotides
-      parameter (n3=500)
+      parameter (n3=3000)
 
 c...Number of backbone axis points/step for groove calculations
       parameter (n4=5)

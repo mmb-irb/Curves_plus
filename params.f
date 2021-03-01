@@ -3,17 +3,16 @@
       character*1 na,nt
       character*4 mnam,munit,snam,sunit,nback,inam
       character*8 sugt(10),puck,axang
-      character*128 file,ftop,lis,lib,lig,ibld,sol,back
+      character*128 file,ftop,lis,lib,ibld,sol,back
       character clin*56,strand(4)*3
-      logical*2 circ,line,zaxe,fit,test,ions,refo,axfrm,frames,lpa,
-     1 traj,invert(n3)
+      logical*2 circ,line,zaxe,fit,test,ions,refo,axfrm,frames,
+     1 lpa,traj,invert(n3)
       dimension r1(4,3),r2(4,3),sums(8),sumc(8),jtran(7),
      1 vaf(n3,2),mad(18)
-      common/cha/file,ftop,lis,lib,lig,ibld,sol,back
-      common/dat/wback,wbase,isym,itst,itnd,itdel,naxlim,
-     1 circ,line,zaxe,fit,test,ions,refo,axfrm,frames
-      common/geo/ref(n3,4,5,3),rel(n6,4,3),upm(n3,4,3),plig(n6),
-     1 ilig(n6),klig,nback(4)
+      common/cha/file,ftop,lis,lib,ibld,sol,back
+      common/dat/wback,wbase,rvfac,isym,itst,itnd,itdel,itbkt,
+     1 naxlim,circ,line,zaxe,fit,test,ions,refo,axfrm,frames
+      common/geo/ref(n3,4,5,3),upm(n3,4,3),nback(4)
       common/hel/upl(n3,0:8,6),uvw(n3,4,3),npl(n3),lpa(n3,4)
       common/ion/pari(n1,3),ilis(n1,2),klis(40),ilib(40),kion(5),
      1 kisa,nion,nspl,inam(40)
@@ -376,17 +375,11 @@ c--------------------------------------------------------inter bp params
       if(.not.traj) write(6,12)(sums(j),j=1,8)
 c-----------------------------------------------------------other params
       call axref
-      if(.not.traj.and.klig.eq.0.and.kion(1).eq.0) call pdbout('_X',1)
       call backbo
       call manta(xdsp)
-      if(klig.gt.0.or.kion(1).gt.0.or.ibld.ne.' ') call intaxe
-         if(kion(1).gt.0) then
-         call ionpar
-         if(.not.traj) call pdbout('_X',1)
-         endif
-            if(klig.gt.0) then
-            call ligpar
-            if(.not.traj) call pdbout('_X',1)
-            endif
+      call curpar
+      call intaxe
+      if(kion(1).gt.0) call ionpar
+      if(.not.traj) call pdbout('_X',1)
       return
       end
