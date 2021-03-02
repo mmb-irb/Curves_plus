@@ -6,7 +6,7 @@ CFLAG=
 
 # FC= gfortran
 #FFLAG= -w -fbounds-check -O2
-FFLAG= -w -fallow-argument-mismatch -O2
+FFLAG= -w -O2
 
 ###------------------ Amber netCDF input support ------------------###
 ## Amber netCDF support requires an external installation of the
