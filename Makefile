@@ -6,7 +6,7 @@ CFLAG=
 
 # FC= gfortran
 #FFLAG= -w -fbounds-check -O2
-FFLAG= -w -O2
+FFLAG= -w -fallow-argument-mismatch -O2
 
 ###------------------ Amber netCDF input support ------------------###
 ## Amber netCDF support requires an external installation of the
@@ -21,7 +21,8 @@ FFLAG= -w -O2
 ## 
 ## If you have AmberTools installed (version >=13), please set
 ## NETCDF to the location of your AmberTools installation; e.g.:
-NETCDF=$(AMBERHOME)/AmberTools
+# NETCDF=$(AMBERHOME)/AmberTools
+NETCDF=$(AMBERHOME)
 ##
 ## If you installed netcdf-fortran using macports on MACOSX,
 ## set NETCDF to the location of your macports tree; e.g.:
