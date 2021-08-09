@@ -1,6 +1,5 @@
 
 #### Makefile for Cur+ ####
-
 # CC= cc
 CFLAG= 
 
@@ -34,6 +33,9 @@ NETCDF=$(AMBERHOME)
 ## NETCDF=/usr/local
 ##
 
+# if platform is Darwin, 
+# with this option dynamic libraries are linked during compilation
+# INSTALL_NAME_OPT = -dynamiclib -install_name $(NETCDF)/lib/
 ###------------------ Gromacs XTC input support -------------------###
 ## To enable XTC support, uncomment the following line:
 XTC= yes
@@ -41,19 +43,20 @@ XTC= yes
 ## Please do not edit below this line.
 ###----------------------------------------------------------------###
 ifdef NETCDF
-FFLAG_NC= -I$(NETCDF)/include/ -DNETCDF
+FFLAG_NC= -I$(NETCDF)/include/ -DNETCDF -fallow-argument-mismatch
 ifneq ("$(wildcard $(NETCDF)/lib/libnetcdff.a)","")
 libnetcdf= netcdff
 else
 libnetcdf= netcdf
 endif
-LDFLAG_NC= -L$(NETCDF)/lib -l$(libnetcdf)
+LDFLAG_NC= -L$(NETCDF)/lib -l$(libnetcdf) 
 endif
+
 
 ifdef XTC
 XTC_OBJ= f77_molfile.o
 FFLAG_XTC= -DXTC
-LDFLAG_XTC= -L. -lmolfile_plugin -lstdc++
+LDFLAG_XTC= -L. -lmolfile_plugin -lstdc++ 
 endif
 
 OBJ= aacur.o axis.o axref.o backbo.o bisection.o dotdelta.o eigen.o \
