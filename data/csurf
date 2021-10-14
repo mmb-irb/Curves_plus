@@ -1,6 +1,0 @@
-rm tcanion*.*
-/Users/rl/Code/util/canion <<!
-&inp dat=test.cdi,lis=tcanion, axfrm=test, type=*,
-itst=1, &end
- !
-

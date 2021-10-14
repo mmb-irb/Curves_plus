@@ -1,8 +1,0 @@
-rm test*.*
-/Users/rl/Code/cur+nc/Cur+ <<!
-&inp file=1bna.pdb, lis=test, axfrm=.t.,
-ions=.t., lib=/Users/rl/Code/cur+nc/standard, &end
-2 1 -1 0 0
-1:12
-24:13
-!
