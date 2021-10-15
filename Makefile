@@ -1,4 +1,3 @@
-
 #### Makefile for Cur+ ####
 # CC= cc
 CFLAG= 
@@ -42,8 +41,9 @@ XTC= yes
 
 ## Please do not edit below this line.
 ###----------------------------------------------------------------###
+
 ifdef NETCDF
-FFLAG_NC= -I$(NETCDF)/include/ -DNETCDF -fallow-argument-mismatch
+FFLAG_NC= -I$(NETCDF)/include/ -DNETCDF -Wno-argument-mismatch
 ifneq ("$(wildcard $(NETCDF)/lib/libnetcdff.a)","")
 libnetcdf= netcdff
 else
